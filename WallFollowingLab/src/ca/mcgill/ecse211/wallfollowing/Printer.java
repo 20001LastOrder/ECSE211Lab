@@ -30,8 +30,7 @@ public class Printer extends Thread {
         t.drawString("BangBang", 0, 1);
       else if (this.option == Button.ID_RIGHT)
         t.drawString("P type", 0, 1);
-      t.drawString("US Distance: " + cont.readUSDistance(), 0, 2); // print last US reading
-
+      t.drawString("US Distancs: " + cont.readUSDistance(), 0, 2); // print last US reading
       try {
         Thread.sleep(200); // sleep for 200 mS
       } catch (Exception e) {

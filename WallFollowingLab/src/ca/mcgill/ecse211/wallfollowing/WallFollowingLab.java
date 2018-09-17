@@ -9,14 +9,14 @@ import lejos.hardware.Button;
 
 public class WallFollowingLab {
 
-  // Parameters: adjust these for desired performance
+  // Parameters: adjust these for desired performance 
 
-  private static final int bandCenter = 20; // Offset from the wall (cm)
+  private static final int bandCenter = 25; // Offset from the wall (cm)
   private static final int bandWidth = 3; // Width of dead band (cm)
   private static final int motorLow = 100; // Speed of slower rotating wheel (deg/sec)
-  private static final int motorHigh = 200; // Speed of the faster rotating wheel (deg/seec)
-
-
+  private static final int motorHigh = 300; // Speed of the faster rotating wheel (deg/seec)
+  public static final int DANGER_DISTANCE = 8; //distance for a impossible turn, go backward to ensure safety
+  
   private static final Port usPort = LocalEV3.get().getPort("S1");
   public static final EV3LargeRegulatedMotor leftMotor =
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
