@@ -5,16 +5,16 @@ public class PController implements UltrasonicController {
 	/* Static Constants */
 	private static final int MOTOR_SPEED = 200;             //speed for normal operation
 	
-	private static final int LEFT_MAX = 500;                //max speed for left wheel
-	private static final int LEFT_MIN = 200;                //min speed for left wheel
+	private static final int LEFT_MAX = 400;                //max speed for left wheel
+	private static final int LEFT_MIN = 100;                //min speed for left wheel
 	
 	private static final int RIGHT_MAX = 430;               //max speed for right wheel
 	private static final int RIGHT_MIN = 100;               //min speed for right wheel
 	
 	private static final int BACKWARD_REDUCED_SPEED = 100;  //speed for the right wheel when go back
 	
-	private static final int RIGHT_GAIN = 20;               //gain for correction on the right turn
-	private static final int LEFT_GAIN = 13;                //gain for correction on the left turn
+	private static final int RIGHT_GAIN = 25;               //gain for correction on the right turn
+	private static final int LEFT_GAIN = 15;                //gain for correction on the left turn
 	
 	private static final int FILTER_OUT = 40;               //filter out amount of distance that to far
 
@@ -106,7 +106,7 @@ public class PController implements UltrasonicController {
 	public void backward() {
 		//go backward different speed to let backward to help turning as well
 		WallFollowingLab.leftMotor.setSpeed(BACKWARD_REDUCED_SPEED);
-		WallFollowingLab.rightMotor.setSpeed(MOTOR_SPEED);
+		WallFollowingLab.rightMotor.setSpeed(300);
 		WallFollowingLab.leftMotor.backward();
 		WallFollowingLab.rightMotor.backward();
 	}
@@ -119,7 +119,7 @@ public class PController implements UltrasonicController {
 		// to close to the wall
 		int gain = getGain(diff,RIGHT_GAIN);
 		int leftSpeed = ((MOTOR_SPEED - gain) > LEFT_MAX)? LEFT_MAX : MOTOR_SPEED - gain;
-		int rightSpeed = RIGHT_MIN;
+		int rightSpeed = ((MOTOR_SPEED + gain) < RIGHT_MIN)? RIGHT_MIN : MOTOR_SPEED + gain;
 		WallFollowingLab.leftMotor.setSpeed(leftSpeed); //change direction to aviod cllision
 		WallFollowingLab.rightMotor.setSpeed(rightSpeed);
 		WallFollowingLab.leftMotor.forward();
@@ -133,7 +133,7 @@ public class PController implements UltrasonicController {
 	public void turnLeft(int diff) {
 		// too far to the wall
 		int gain = getGain(diff,LEFT_GAIN);
-		int leftSpeed = LEFT_MIN;
+		int leftSpeed = ((MOTOR_SPEED - gain) < LEFT_MIN )? LEFT_MIN:MOTOR_SPEED - gain;
 		int rightSpeed = ((MOTOR_SPEED + gain) > RIGHT_MAX || (MOTOR_SPEED + gain) < 0)? RIGHT_MAX:MOTOR_SPEED + gain;
 		WallFollowingLab.leftMotor.setSpeed(leftSpeed);
 		WallFollowingLab.rightMotor.setSpeed(rightSpeed);	

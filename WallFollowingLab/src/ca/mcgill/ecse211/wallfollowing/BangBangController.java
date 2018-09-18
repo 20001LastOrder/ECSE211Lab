@@ -9,7 +9,7 @@ public class BangBangController implements UltrasonicController {
 	private final int motorHigh;
 	private int distance;
 	private int filterControl;
-	static final int FILTER_OUT = 30;
+	static final int FILTER_OUT = 25;
 
 	public BangBangController(int bandCenter, int bandwidth, int motorLow, int motorHigh) {
 		// Default Constructor
@@ -63,8 +63,9 @@ public class BangBangController implements UltrasonicController {
 	}
 
 	public void forward() {
-		WallFollowingLab.leftMotor.setSpeed(motorHigh);
-		WallFollowingLab.rightMotor.setSpeed(motorHigh);
+		WallFollowingLab.leftMotor.setSpeed(150);
+		WallFollowingLab.rightMotor.setSpeed(150
+				);
 		WallFollowingLab.leftMotor.forward();
 		WallFollowingLab.rightMotor.forward();
 	}
@@ -78,7 +79,7 @@ public class BangBangController implements UltrasonicController {
 	
 	public void turnRight() {
 		// to close to the wall
-		WallFollowingLab.leftMotor.setSpeed(motorHigh); //change direction to aviod cllision
+		WallFollowingLab.leftMotor.setSpeed(500); //change direction to aviod cllision
 		WallFollowingLab.rightMotor.setSpeed(motorLow);
 		WallFollowingLab.leftMotor.forward();
 		WallFollowingLab.rightMotor.forward();
@@ -86,8 +87,8 @@ public class BangBangController implements UltrasonicController {
 	
 	public void turnLeft() {
 		// too far to the wall
-		WallFollowingLab.leftMotor.setSpeed(motorLow);
-		WallFollowingLab.rightMotor.setSpeed(motorHigh);	
+		WallFollowingLab.leftMotor.setSpeed(200);
+		WallFollowingLab.rightMotor.setSpeed(500);	
 		WallFollowingLab.leftMotor.forward();
 		WallFollowingLab.rightMotor.forward();
 	}
