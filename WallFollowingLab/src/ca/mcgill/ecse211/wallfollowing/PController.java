@@ -14,11 +14,11 @@ public class PController implements UltrasonicController {
 	private static final int BACKWARD_REDUCED_SPEED = 100;  //speed for the right wheel when go back
 	
 	private static final int RIGHT_GAIN = 25;               //gain for correction on the right turn
-	private static final int LEFT_GAIN = 15;                //gain for correction on the left turn
+	private static final int LEFT_GAIN = 25;                //gain for correction on the left turn
 	
 	private static final int FILTER_OUT = 40;               //filter out amount of distance that to far
 
-	private static final int UNUSUAL_DISTANCE = 200;        //distance that unusual far away     
+	private static final int UNUSUAL_DISTANCE = 100;        //distance that unusual far away     
 	/* Instance Constants */
 	private final int bandCenter;
 	private final int bandWidth;
