@@ -2,6 +2,7 @@ package ca.mcgill.ecse211.wallfollowing;
 
 public class BangBangController implements UltrasonicController {
 	private static final int UNUSUAL_DISTANCE = 100;
+	private static final int NOMAL_MOTOR_SPEED = 150;
 	
 	private final int bandCenter;
 	private final int bandwidth;
@@ -9,7 +10,7 @@ public class BangBangController implements UltrasonicController {
 	private final int motorHigh;
 	private int distance;
 	private int filterControl;
-	static final int FILTER_OUT = 25;
+	static final int FILTER_OUT = 30;
 
 	public BangBangController(int bandCenter, int bandwidth, int motorLow, int motorHigh) {
 		// Default Constructor
@@ -63,9 +64,8 @@ public class BangBangController implements UltrasonicController {
 	}
 
 	public void forward() {
-		WallFollowingLab.leftMotor.setSpeed(150);
-		WallFollowingLab.rightMotor.setSpeed(150
-				);
+		WallFollowingLab.leftMotor.setSpeed(NOMAL_MOTOR_SPEED);
+		WallFollowingLab.rightMotor.setSpeed(NOMAL_MOTOR_SPEED);
 		WallFollowingLab.leftMotor.forward();
 		WallFollowingLab.rightMotor.forward();
 	}

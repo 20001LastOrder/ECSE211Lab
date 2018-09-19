@@ -6,7 +6,7 @@ public class PController implements UltrasonicController {
 	private static final int MOTOR_SPEED = 200;             //speed for normal operation
 	
 	private static final int LEFT_MAX = 400;                //max speed for left wheel
-	private static final int LEFT_MIN = 100;                //min speed for left wheel
+	private static final int LEFT_MIN = 200;                //min speed for left wheel
 	
 	private static final int RIGHT_MAX = 430;               //max speed for right wheel
 	private static final int RIGHT_MIN = 100;               //min speed for right wheel
@@ -14,11 +14,12 @@ public class PController implements UltrasonicController {
 	private static final int BACKWARD_REDUCED_SPEED = 100;  //speed for the right wheel when go back
 	
 	private static final int RIGHT_GAIN = 25;               //gain for correction on the right turn
-	private static final int LEFT_GAIN = 25;                //gain for correction on the left turn
+	private static final int LEFT_GAIN = 16 ;                //gain for correction on the left turn
+	private static final int MAX_ALLOW_ERR = 50;
 	
 	private static final int FILTER_OUT = 40;               //filter out amount of distance that to far
 
-	private static final int UNUSUAL_DISTANCE = 100;        //distance that unusual far away     
+	private static final int UNUSUAL_DISTANCE = 255;        //distance that unusual far away     
 	/* Instance Constants */
 	private final int bandCenter;
 	private final int bandWidth;
@@ -65,7 +66,9 @@ public class PController implements UltrasonicController {
 			// We have repeated large values, so there must actually be nothing
 			// there: leave the distance alone
 			this.distance = distance;
-		} else {
+		} else if(distance >= bandCenter+bandWidth){
+			this.distance = distance;
+		}else {
 			// distance went below 255: reset filter and leave
 			// distance alone.
 			filterControl = 0;
@@ -74,6 +77,9 @@ public class PController implements UltrasonicController {
 
 		// TODO: process a movement based on the us distance passed in (P style)
 		int diff = distance - bandCenter;
+		if(diff > MAX_ALLOW_ERR) {
+			diff = MAX_ALLOW_ERR;
+		}
 		// if the distance is invalid (too far) nor the diff is within
 		// the bandwidth, keep the current speed
 		if (Math.abs(diff) < this.bandWidth) {
