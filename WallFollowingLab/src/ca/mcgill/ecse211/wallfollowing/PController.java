@@ -1,5 +1,11 @@
 package ca.mcgill.ecse211.wallfollowing;
 
+/**
+ * PController
+ * @author AnssamGhezala
+ * @author PercyChen 
+ * 
+ */
 public class PController implements UltrasonicController {
 
 	/* Static Constants */
@@ -11,6 +17,7 @@ public class PController implements UltrasonicController {
 	private static final int RIGHT_MAX = 500;               //max speed for right wheel
 	private static final int RIGHT_MIN = 100;               //min speed for right wheel
 	
+	private static final int BACKWARD_NORMAL_SPEED=350;     //speed for left wheel when backward 
 	private static final int BACKWARD_REDUCED_SPEED = 100;  //speed for the right wheel when go back
 	
 	private static final int RIGHT_GAIN = 25;               //gain for correction on the right turn
@@ -78,19 +85,21 @@ public class PController implements UltrasonicController {
 		// TODO: process a movement based on the us distance passed in (P style)
 		int diff = distance - bandCenter;
 		if(diff > MAX_ALLOW_ERR) {
-			diff = MAX_ALLOW_ERR;
+			diff = MAX_ALLOW_ERR; //avoiding overflow 
 		}
 		// if the distance is invalid (too far) nor the diff is within
 		// the bandwidth, keep the current speed
 		if (Math.abs(diff) < this.bandWidth) {
 			forward();
 		} else if (diff > 0) {
+			//offtrack or corner turn left
 			turnLeft(diff);
 		} else if (diff < 0) {
 			if(diff < -(bandCenter - WallFollowingLab.DANGER_DISTANCE)) {
 				//if too close, go backwards
 				backward();
 			}else {
+				//offtrack or corner turn right
 				turnRight(diff);
 			}
 		}
@@ -107,12 +116,13 @@ public class PController implements UltrasonicController {
 	}
 	
 	/**
-	 * move the robot backward (adjust the robot to facing right at the same time)
+	 * turn the robot to the right
+	 * @param diff: diff between desired distance and actual distance, used to calculate the gain
 	 */
 	public void backward() {
 		//go backward different speed to let backward to help turning as well
 		WallFollowingLab.leftMotor.setSpeed(BACKWARD_REDUCED_SPEED);
-		WallFollowingLab.rightMotor.setSpeed(350);
+		WallFollowingLab.rightMotor.setSpeed(BACKWARD_NORMAL_SPEED); 
 		WallFollowingLab.leftMotor.backward();
 		WallFollowingLab.rightMotor.backward();
 	}
@@ -124,8 +134,8 @@ public class PController implements UltrasonicController {
 	public void turnRight(int diff) {
 		// to close to the wall
 		int gain = getGain(diff,RIGHT_GAIN);
-		int leftSpeed = ((MOTOR_SPEED - gain) > LEFT_MAX)? LEFT_MAX : MOTOR_SPEED - gain;
-		int rightSpeed = ((MOTOR_SPEED + gain) < RIGHT_MIN)? RIGHT_MIN : MOTOR_SPEED + gain;
+		int leftSpeed = ((MOTOR_SPEED - gain) > LEFT_MAX)? LEFT_MAX : MOTOR_SPEED - gain; 
+		int rightSpeed = ((MOTOR_SPEED + gain) < RIGHT_MIN)? RIGHT_MIN : MOTOR_SPEED + gain;  
 		WallFollowingLab.leftMotor.setSpeed(leftSpeed); //change direction to aviod cllision
 		WallFollowingLab.rightMotor.setSpeed(rightSpeed);
 		WallFollowingLab.leftMotor.forward();
@@ -140,7 +150,7 @@ public class PController implements UltrasonicController {
 		// too far to the wall
 		int gain = getGain(diff,LEFT_GAIN);
 		int leftSpeed = ((MOTOR_SPEED - gain) < LEFT_MIN )? LEFT_MIN:MOTOR_SPEED - gain;
-		int rightSpeed = ((MOTOR_SPEED + gain) > RIGHT_MAX || (MOTOR_SPEED + gain) < 0)? RIGHT_MAX:MOTOR_SPEED + gain;
+		int rightSpeed = ((MOTOR_SPEED + gain) > RIGHT_MAX )? RIGHT_MAX:MOTOR_SPEED + gain; 
 		WallFollowingLab.leftMotor.setSpeed(leftSpeed);
 		WallFollowingLab.rightMotor.setSpeed(rightSpeed);	
 		WallFollowingLab.leftMotor.forward();
@@ -162,8 +172,8 @@ public class PController implements UltrasonicController {
 	 * @return int: the calculated gain of this different at the provided constant
 	 */
 	public int getGain(int diff, int gain) {
-		// consider different formulas
-		int thisGain = gain*diff;
+		// using linear formula for gain
+		int thisGain = gain*diff; 
 		return thisGain;
 	}
 }

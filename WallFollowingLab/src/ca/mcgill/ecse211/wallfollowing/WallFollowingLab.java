@@ -7,6 +7,13 @@ import lejos.hardware.port.Port;
 import lejos.robotics.SampleProvider;
 import lejos.hardware.Button;
 
+
+/**
+ * main class for app controlling the other threads
+ * @author AnssamGhezala
+ * @author PercyChen 
+ * 
+ */
 public class WallFollowingLab {
 
   // Parameters: adjust these for desired performance 

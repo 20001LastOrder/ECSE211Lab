@@ -1,13 +1,24 @@
 package ca.mcgill.ecse211.wallfollowing;
 
+/**
+ * BangBangController
+ * @author AnssamGhezala
+ * @author PercyChen 
+ * 
+ */
 public class BangBangController implements UltrasonicController {
 	private static final int UNUSUAL_DISTANCE = 100;
 	private static final int NOMAL_MOTOR_SPEED = 150;
 	
+	private static final int BACKWARD_NORMAL_SPEED = 350;
+	private static final int RIGHT_TURN_HIGH = 500;
+	private static final int LEFT_TURN_HIGH = 300;
+	private static final int LEFT_TURN_LOW = 100;
+	
 	private final int bandCenter;
 	private final int bandwidth;
 	private final int motorLow;
-	private final int motorHigh;
+	private final int motorHigh; //never use it because need different values for different turns (see constants above)
 	private int distance;
 	private int filterControl;
 	static final int FILTER_OUT = 34;
@@ -26,6 +37,11 @@ public class BangBangController implements UltrasonicController {
 	}
 
 	@Override
+	
+	/**
+	 * processing sample data from sensor
+	 * @param distance : distance recieved from sensor
+	 */
 	public void processUSData(int distance) {
 		if (distance >= UNUSUAL_DISTANCE && filterControl < FILTER_OUT) {
 			// bad value, do not set the distance var, however do increment the
@@ -52,17 +68,23 @@ public class BangBangController implements UltrasonicController {
 		if ( Math.abs(diff) < this.bandwidth) {
 			forward();
 		} else if (diff > 0) {
+			// offtrack or corner turn left
 			turnLeft();
 		} else if (diff < 0) {
 			if(diff < -(bandCenter - WallFollowingLab.DANGER_DISTANCE)) {
 				//if too close, go backwards
 				backward();
 			}else {
+				//off track or corner turn right
 				turnRight();
 			}
 		}
 	}
 
+	/**
+	 * 
+	 * move forward
+	 */
 	public void forward() {
 		WallFollowingLab.leftMotor.setSpeed(NOMAL_MOTOR_SPEED);
 		WallFollowingLab.rightMotor.setSpeed(NOMAL_MOTOR_SPEED);
@@ -70,30 +92,46 @@ public class BangBangController implements UltrasonicController {
 		WallFollowingLab.rightMotor.forward();
 	}
 	
+	/**
+	 * 
+	 * turn backward
+	 */
 	public void backward() {
 		WallFollowingLab.leftMotor.setSpeed(motorLow);
-		WallFollowingLab.rightMotor.setSpeed(350);
+		WallFollowingLab.rightMotor.setSpeed(BACKWARD_NORMAL_SPEED);
 		WallFollowingLab.leftMotor.backward();
 		WallFollowingLab.rightMotor.backward();
 	}
 	
+	/**
+	 * turn the robot to the right
+	 *
+	 */
 	public void turnRight() {
 		// to close to the wall
-		WallFollowingLab.leftMotor.setSpeed(500); //change direction to aviod cllision
+		WallFollowingLab.leftMotor.setSpeed(RIGHT_TURN_HIGH);  
 		WallFollowingLab.rightMotor.setSpeed(motorLow);
 		WallFollowingLab.leftMotor.forward();
 		WallFollowingLab.rightMotor.forward();
 	}
 	
+	/**
+	 * turn the robot to the left
+	 * 
+	 */
 	public void turnLeft() {
 		// too far to the wall
-		WallFollowingLab.leftMotor.setSpeed(100);
-		WallFollowingLab.rightMotor.setSpeed(300);	
+		WallFollowingLab.leftMotor.setSpeed(LEFT_TURN_LOW); 
+		WallFollowingLab.rightMotor.setSpeed(LEFT_TURN_HIGH);	 
 		WallFollowingLab.leftMotor.forward();
 		WallFollowingLab.rightMotor.forward();
 	}
 	
 	@Override
+	/**
+	 * read sampled distance from sensor
+	 * 
+	 */
 	public int readUSDistance() {
 		return this.distance;
 	}

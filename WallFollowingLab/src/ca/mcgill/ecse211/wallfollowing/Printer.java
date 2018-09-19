@@ -4,6 +4,12 @@ import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 
+/**
+ * printer class to display data
+ * @author AnssamGhezala
+ * @author PercyChen 
+ * 
+ */
 public class Printer extends Thread {
 
   //
