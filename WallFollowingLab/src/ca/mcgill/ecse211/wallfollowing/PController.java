@@ -5,16 +5,16 @@ public class PController implements UltrasonicController {
 	/* Static Constants */
 	private static final int MOTOR_SPEED = 200;             //speed for normal operation
 	
-	private static final int LEFT_MAX = 400;                //max speed for left wheel
-	private static final int LEFT_MIN = 200;                //min speed for left wheel
+	private static final int LEFT_MAX = 350;                //max speed for left wheel
+	private static final int LEFT_MIN = 100;                //min speed for left wheel
 	
-	private static final int RIGHT_MAX = 430;               //max speed for right wheel
+	private static final int RIGHT_MAX = 500;               //max speed for right wheel
 	private static final int RIGHT_MIN = 100;               //min speed for right wheel
 	
 	private static final int BACKWARD_REDUCED_SPEED = 100;  //speed for the right wheel when go back
 	
 	private static final int RIGHT_GAIN = 25;               //gain for correction on the right turn
-	private static final int LEFT_GAIN = 16 ;                //gain for correction on the left turn
+	private static final int LEFT_GAIN = 12;                //gain for correction on the left turn
 	private static final int MAX_ALLOW_ERR = 50;
 	
 	private static final int FILTER_OUT = 40;               //filter out amount of distance that to far
@@ -112,7 +112,7 @@ public class PController implements UltrasonicController {
 	public void backward() {
 		//go backward different speed to let backward to help turning as well
 		WallFollowingLab.leftMotor.setSpeed(BACKWARD_REDUCED_SPEED);
-		WallFollowingLab.rightMotor.setSpeed(300);
+		WallFollowingLab.rightMotor.setSpeed(350);
 		WallFollowingLab.leftMotor.backward();
 		WallFollowingLab.rightMotor.backward();
 	}
