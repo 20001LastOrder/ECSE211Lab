@@ -1,11 +1,17 @@
 // Lab2.java
 package ca.mcgill.ecse211.lab2;
 
-import ca.mcgill.ecse211.odometer.*;
+import ca.mcgill.ecse211.odometer.Odometer;
+import ca.mcgill.ecse211.odometer.OdometerExceptions;
+import ca.mcgill.ecse211.odometer.OdometryCorrection;
 import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
+import lejos.hardware.sensor.EV3ColorSensor;
+import lejos.hardware.sensor.SensorModes;
+import lejos.robotics.SampleProvider;
 
 public class Lab2 {
 
@@ -15,17 +21,22 @@ public class Lab2 {
   private static final EV3LargeRegulatedMotor rightMotor =
       new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
   private static final TextLCD lcd = LocalEV3.get().getTextLCD();
+  
+  //get color sample
+  private static final Port portColor = LocalEV3.get().getPort("S1");
+  private static final EV3ColorSensor colorSensor = new EV3ColorSensor(portColor);
+  private static final SampleProvider colorSample = colorSensor.getRGBMode();
+  
   public static final double WHEEL_RAD = 2.3;
-  public static final double TRACK = 16.4;
+  public static final double TRACK = 15.75;
 
   public static void main(String[] args) throws OdometerExceptions {
 
     int buttonChoice;
 
     // Odometer related objects
-    Odometer odometer = Odometer.getOdometer(leftMotor, rightMotor, TRACK, WHEEL_RAD); // TODO Complete implementation
-    OdometryCorrection odometryCorrection = new OdometryCorrection(); // TODO Complete
-                                                                      // implementation
+    Odometer odometer = Odometer.getOdometer(leftMotor, rightMotor, TRACK, WHEEL_RAD); 
+    OdometryCorrection odometryCorrection = new OdometryCorrection(colorSample); 
     Display odometryDisplay = new Display(lcd); // No need to change
 
 
@@ -79,7 +90,7 @@ public class Lab2 {
       // Start correction if right button was pressed
       if (buttonChoice == Button.ID_RIGHT) {
         Thread odoCorrectionThread = new Thread(odometryCorrection);
-        odoCorrectionThread.start();
+        odoCorrectionThread.start( );
       }
 
       // spawn a new Thread to avoid SquareDriver.drive() from blocking

@@ -3,6 +3,7 @@ package ca.mcgill.ecse211.lab2;
 import java.text.DecimalFormat;
 import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
+import ca.mcgill.ecse211.odometer.OdometryCorrection;
 import lejos.hardware.lcd.TextLCD;
 
 /**
@@ -51,13 +52,15 @@ public class Display implements Runnable {
 
       // Retrieve x, y and Theta information
       position = odo.getXYT();
-      
+      double[] cp = OdometryCorrection.instance.correctPositions;
       // Print x,y, and theta information
       DecimalFormat numberFormat = new DecimalFormat("######0.00");
       lcd.drawString("X: " + numberFormat.format(position[0]), 0, 0);
       lcd.drawString("Y: " + numberFormat.format(position[1]), 0, 1);
       lcd.drawString("T: " + numberFormat.format(position[2]), 0, 2);
-      
+      lcd.drawString("C: " + numberFormat.format(cp[0]), 0, 3);
+      lcd.drawString("C: " + numberFormat.format(cp[1]), 0, 4);
+      lcd.drawString("C: " + numberFormat.format(cp[2]), 0, 5);
       // this ensures that the data is updated only once every period
       updateEnd = System.currentTimeMillis();
       if (updateEnd - updateStart < DISPLAY_PERIOD) {
