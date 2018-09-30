@@ -17,8 +17,8 @@ public class Lab3 {
 	int buttonChoice;
 
 	public static final double TILE_SIZE = 30.48;
-	public static final double WHEEL_RAD = 2.2;
-	public static final double TRACK = 14.5;
+	public static final double WHEEL_RAD = 2.15;
+	public static final double TRACK = 14.43;
 
 	public static void main(String args[]) {
 		// Odometer related objects
@@ -55,7 +55,11 @@ public class Lab3 {
 		          public void run() {
 		        	  try {
 						Navigation.driveTo(leftMotor, rightMotor, 0, 2);
-					    System.exit(0);
+						Navigation.driveTo(leftMotor, rightMotor, 1, 1);
+						Navigation.driveTo(leftMotor, rightMotor, 2, 2);
+						Navigation.driveTo(leftMotor, rightMotor, 2, 1);
+						Navigation.driveTo(leftMotor, rightMotor, 1, 0);
+
 					} catch (OdometerExceptions e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

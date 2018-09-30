@@ -48,7 +48,9 @@ public class Navigation {
 		double angle = rotation - theta;
 		int leftSpeedFactor = 1;
 		int rightSpeedFactor = -1;
-		
+		if(angle <0) {
+			angle = angle + 360;
+		}
 		if(angle > 180) {
 			angle = 360 - angle;
 			leftSpeedFactor = -1;
