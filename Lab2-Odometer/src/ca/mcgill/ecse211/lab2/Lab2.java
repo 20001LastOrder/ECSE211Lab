@@ -13,6 +13,13 @@ import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
 
+/**
+ * Main class for entering the application and starting the other threads
+ * @author Percy Chen
+ * @author Anssam Ghezala 
+ *
+ */
+
 public class Lab2 {
 
   // Motor Objects, and Robot related parameters

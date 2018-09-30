@@ -10,6 +10,8 @@
 
 package ca.mcgill.ecse211.odometer;
 
+import ca.mcgill.ecse211.lab3.Lab3;
+import ca.mcgill.ecse211.lab3.Navigation;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
 /**
@@ -142,7 +144,7 @@ public class Odometer extends OdometerData implements Runnable {
       position[1] = deltaY(displacement, newDegree);
       
       // Update odometer values with new calculated values
-      odo.update(position[0], position[1], position[2]);
+      odo.update(position[0] / Lab3.TILE_SIZE, position[1]/Lab3.TILE_SIZE, position[2]);
       lastTachoLeft = leftMotorTachoCount;
       lastTachoRight = rightMotorTachoCount;
       // this ensures that the odometer only runs once every period
