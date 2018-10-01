@@ -23,7 +23,7 @@ public class Lab3 {
 
 	public static final double TILE_SIZE = 30.48;
 	public static final double WHEEL_RAD = 2.15;
-	public static final double TRACK = 14.43;
+	public static final double TRACK = 13.75; //14.43
 
 	public static void main(String args[]) {
 		// Odometer related objects
@@ -68,7 +68,7 @@ public class Lab3 {
 																		// returned
 				// start poller thread
 				UltrasonicPoller poller = new UltrasonicPoller(usDistance, usData);
-				Display odometryDisplay = new Display(lcd); // No need to change
+				Display odometryDisplay = new Display(lcd, poller); // No need to change
 				// Start odometer and display threads
 				Thread odoThread = new Thread(odometer);
 				odoThread.start();

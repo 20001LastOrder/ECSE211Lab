@@ -22,11 +22,11 @@ public class Navigation extends Thread {
 
 	public void run() {
 		try {
-			driveTo(leftMotor, rightMotor, 0, 2, poller);
-//			driveTo(leftMotor, rightMotor, 1, 1, poller);
-//			driveTo(leftMotor, rightMotor, 2, 2, poller);
-//			driveTo(leftMotor, rightMotor, 2, 1, poller);
-//			driveTo(leftMotor, rightMotor, 1, 0, poller);
+			driveTo(leftMotor, rightMotor, 0, 2,poller);
+			driveTo(leftMotor, rightMotor, 1, 1,poller);
+			driveTo(leftMotor, rightMotor, 2, 2,poller);
+			driveTo(leftMotor, rightMotor, 2, 1,poller);
+			driveTo(leftMotor, rightMotor, 1, 0,poller);
 		} catch (OdometerExceptions e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -75,13 +75,19 @@ public class Navigation extends Thread {
 		double[] currentPosition = Odometer.getOdometer().getXYT();
 		double deltaX = x - currentPosition[0];
 		double deltaY = y - currentPosition[1];
+		double distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+
 		double rotation = Math.atan2(deltaX, deltaY);
 
 		rotateTo(leftMotor, rightMotor, rotation * DEGREE_TO_RADIAN_FACTOR, currentPosition[2]);
+		
+		leftMotor.setSpeed(FORWARD_SPEED);
+		rightMotor.setSpeed(FORWARD_SPEED);
+		leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), true);
+		rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), true);
+		
+		while (leftMotor.isMoving() && rightMotor.isMoving()) {
 
-		while (true) {
-			double position[] = Odometer.getOdometer().getXYT();
-			
 			if (poller.getDistance() < 15) {
 				leftMotor.setSpeed(ROTATE_SPEED);
 				rightMotor.setSpeed(ROTATE_SPEED);
@@ -89,29 +95,19 @@ public class Navigation extends Thread {
 				leftMotor.rotate(convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
 				rightMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
 
+				leftMotor.setSpeed(FORWARD_SPEED);
+				rightMotor.setSpeed(FORWARD_SPEED);
 				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), true);
 				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), false);
-				double dX = x - position[0];
-				double dY = y - position[1];
-				double rot = Math.atan2(deltaX, deltaY);
-				rotateTo(leftMotor, rightMotor, rot, position[2]);
-			}
-			
-			leftMotor.setSpeed(FORWARD_SPEED);
-			rightMotor.setSpeed(FORWARD_SPEED);
-			leftMotor.forward();
-			rightMotor.forward();
-			double err = Math.hypot((position[0] - x), (position[1] - y));
-			if (err < 1) {
-				break;
-			}
-			try {
-				Thread.sleep(50);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				leftMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
+				rightMotor.rotate(convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
+				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), true);
+				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), false);
+				isNavigating = false;
+				driveTo(leftMotor, rightMotor, x, y, poller);
 			}
 		}
+		isNavigating = false;
 	}
 
 	public static boolean isNavigating() {

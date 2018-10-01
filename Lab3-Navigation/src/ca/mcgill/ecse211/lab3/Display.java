@@ -56,8 +56,8 @@ public class Display implements Runnable {
 
     long tStart = System.currentTimeMillis();
     do {
+        lcd.clear();
       updateStart = System.currentTimeMillis();
-
       // Retrieve x, y and Theta information
       position = odo.getXYT();
       // Print x,y, and theta information
