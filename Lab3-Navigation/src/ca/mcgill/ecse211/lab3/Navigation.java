@@ -4,14 +4,36 @@ import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
-public class Navigation {
+public class Navigation extends Thread{
 	private static final int FORWARD_SPEED = 250;
 	private static final int ROTATE_SPEED = 150;
 	private static double DEGREE_TO_RADIAN_FACTOR = 180/Math.PI;
 	private static boolean isNavigating;
 		
-	public static void driveTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
-						int x, int y) throws OdometerExceptions {
+	private EV3LargeRegulatedMotor leftMotor;
+	private EV3LargeRegulatedMotor rightMotor;
+	private UltrasonicPoller poller;
+	public Navigation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, UltrasonicPoller poller){
+		this.leftMotor = leftMotor;
+		this.rightMotor = rightMotor;
+		this.poller = poller;
+	}
+	
+	public void run() {
+		try {
+			driveTo(leftMotor, rightMotor, 0, 2, poller);
+//			driveTo(leftMotor, rightMotor, 1, 1, poller);
+//			driveTo(leftMotor, rightMotor, 2, 2, poller);
+//			driveTo(leftMotor, rightMotor, 2, 1, poller);
+//			driveTo(leftMotor, rightMotor, 1, 0, poller);
+		} catch (OdometerExceptions e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void driveTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
+						int x, int y, UltrasonicPoller poller) throws OdometerExceptions {
 		if(isNavigating) {
 			return;
 		}
@@ -26,7 +48,7 @@ public class Navigation {
 		double deltaY = y-currentPosition[1];
 
 		double distance = Math.sqrt(Math.pow(deltaX, 2)+Math.pow(deltaY, 2));
-		
+
 		double rotation = Math.atan2(deltaX, deltaY);
 		
 		rotateTo(leftMotor, rightMotor, rotation * DEGREE_TO_RADIAN_FACTOR, currentPosition[2]);
@@ -35,7 +57,32 @@ public class Navigation {
 	    rightMotor.setSpeed(FORWARD_SPEED);
 
 	    leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), true);
-	    rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), false);
+	    if(poller == null) {
+		    rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), false);
+	    }else {
+		    rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), true);
+		    while(true) {
+		    	if(poller.getDistance() < 10) {
+		    		leftMotor.setSpeed(ROTATE_SPEED);
+		    	    rightMotor.setSpeed(ROTATE_SPEED);
+		    	    
+		    	    leftMotor.stop();
+		    	    rightMotor.stop();
+		    		leftMotor.rotate(convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
+		    	    rightMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
+		    	    
+		    	    leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 20), true);
+		    	    rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 20), false);
+		    	    driveTo(leftMotor, rightMotor, x, y, poller);
+		    	}
+		    	
+		    	double position[] = Odometer.getOdometer().getXYT();
+		    	double err = Math.hypot((position[0] - x), (position[1] - y));
+		    	if(err < 1) {
+		    		break;
+		    	}
+		    }
+	    }
 	    isNavigating = false;
 	}
 	
@@ -43,7 +90,7 @@ public class Navigation {
 		return isNavigating;
 	}
 	
-	public static void rotateTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, 
+	public void rotateTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, 
 			double rotation, double theta) {
 		double angle = rotation - theta;
 		int leftSpeedFactor = 1;

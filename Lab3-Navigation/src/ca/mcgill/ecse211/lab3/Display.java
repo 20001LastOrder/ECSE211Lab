@@ -16,17 +16,24 @@ public class Display implements Runnable {
   private double[] position;
   private final long DISPLAY_PERIOD = 25;
   private long timeout = Long.MAX_VALUE;
-
+  private UltrasonicPoller poller;
+  
   /**
    * This is the class constructor
    * 
    * @param odoData
    * @throws OdometerExceptions 
    */
-  public Display(TextLCD lcd) throws OdometerExceptions {
+  public Display(TextLCD lcd, UltrasonicPoller poller) throws OdometerExceptions {
     odo = Odometer.getOdometer();
+    this.poller = poller;
     this.lcd = lcd;
   }
+  
+  public Display(TextLCD lcd) throws OdometerExceptions {
+	    odo = Odometer.getOdometer();
+	    this.lcd = lcd;
+	  }
 
   /**
    * This is the overloaded class constructor
@@ -34,8 +41,9 @@ public class Display implements Runnable {
    * @param odoData
    * @throws OdometerExceptions 
    */
-  public Display(TextLCD lcd, long timeout) throws OdometerExceptions {
+  public Display(TextLCD lcd, UltrasonicPoller poller,long timeout) throws OdometerExceptions {
     odo = Odometer.getOdometer();
+    this.poller = poller;
     this.timeout = timeout;
     this.lcd = lcd;
   }
@@ -57,6 +65,9 @@ public class Display implements Runnable {
       lcd.drawString("X: " + numberFormat.format(position[0]), 0, 0);
       lcd.drawString("Y: " + numberFormat.format(position[1]), 0, 1);
       lcd.drawString("T: " + numberFormat.format(position[2]), 0, 2);
+      if(poller != null) {
+          lcd.drawString("Distance: " + poller.getDistance(), 0, 3);
+      }
       // this ensures that the data is updated only once every period
       updateEnd = System.currentTimeMillis();
       if (updateEnd - updateStart < DISPLAY_PERIOD) {
