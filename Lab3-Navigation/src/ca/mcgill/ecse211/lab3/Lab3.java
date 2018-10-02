@@ -1,13 +1,12 @@
 package ca.mcgill.ecse211.lab3;
 
-import ca.mcgill.ecse211.lab3.Display;
 import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
-import ca.mcgill.ecse211.odometer.OdometryCorrection;
 import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.motor.EV3MediumRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorModes;
@@ -23,7 +22,7 @@ public class Lab3 {
 
 	public static final double TILE_SIZE = 30.48;
 	public static final double WHEEL_RAD = 2.15;
-	public static final double TRACK = 13.75; //14.43
+	public static final double TRACK = 13.67; 
 
 	public static void main(String args[]) {
 		// Odometer related objects
@@ -46,7 +45,6 @@ public class Lab3 {
 			} while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT);
 
 			if (buttonChoice == Button.ID_LEFT) {
-
 				// Display changes in position as wheels are (manually) moved
 				Display odometryDisplay = new Display(lcd); // No need to change
 

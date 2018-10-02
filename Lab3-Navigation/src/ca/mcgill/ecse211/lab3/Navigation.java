@@ -2,7 +2,9 @@ package ca.mcgill.ecse211.lab3;
 
 import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
+import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.motor.EV3MediumRegulatedMotor;
 
 public class Navigation extends Thread {
 	private static final int FORWARD_SPEED = 250;
@@ -13,20 +15,31 @@ public class Navigation extends Thread {
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor rightMotor;
 	private UltrasonicPoller poller;
-
+	private static final EV3MediumRegulatedMotor sensorMotor = new EV3MediumRegulatedMotor(LocalEV3.get().getPort("C"));
+	private int sensorRotation;
+	
 	public Navigation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, UltrasonicPoller poller) {
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
 		this.poller = poller;
+		sensorRotation = 0;
 	}
 
 	public void run() {
 		try {
+			if(poller == null) {
+				driveTo(leftMotor, rightMotor, 0, 2);
+				driveTo(leftMotor, rightMotor, 1, 1);
+				driveTo(leftMotor, rightMotor, 2, 2);
+				driveTo(leftMotor, rightMotor, 2, 1);
+				driveTo(leftMotor, rightMotor, 0, 0);
+			} else {
 			driveTo(leftMotor, rightMotor, 0, 2,poller);
 			driveTo(leftMotor, rightMotor, 1, 1,poller);
 			driveTo(leftMotor, rightMotor, 2, 2,poller);
 			driveTo(leftMotor, rightMotor, 2, 1,poller);
-			driveTo(leftMotor, rightMotor, 1, 0,poller);
+			driveTo(leftMotor, rightMotor, 0, 0,poller);
+			}
 		} catch (OdometerExceptions e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -63,6 +76,8 @@ public class Navigation extends Thread {
 
 	public void driveTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, int x, int y,
 			UltrasonicPoller poller) throws OdometerExceptions {
+		
+		
 		if (isNavigating) {
 			return;
 		}
@@ -78,8 +93,8 @@ public class Navigation extends Thread {
 		double distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
 
 		double rotation = Math.atan2(deltaX, deltaY);
-
-		rotateTo(leftMotor, rightMotor, rotation * DEGREE_TO_RADIAN_FACTOR, currentPosition[2]);
+		
+		rotateTo(leftMotor, rightMotor,rotation * DEGREE_TO_RADIAN_FACTOR, currentPosition[2]);
 		
 		leftMotor.setSpeed(FORWARD_SPEED);
 		rightMotor.setSpeed(FORWARD_SPEED);
@@ -89,22 +104,69 @@ public class Navigation extends Thread {
 		while (leftMotor.isMoving() && rightMotor.isMoving()) {
 
 			if (poller.getDistance() < 15) {
+				double curX = Odometer.getOdometer().getXYT()[0];
+				int leftFactor = 1;
+				int rightFactor = -1;
+				//reset sensor rotation
+				if(sensorRotation == -45) {
+					leftFactor = -1;
+					rightFactor = 1;
+				}
+				sensorMotor.rotate(-sensorRotation);
+			sensorRotation = leftFactor* 90;
+				sensorMotor.rotate(sensorRotation);
 				leftMotor.setSpeed(ROTATE_SPEED);
 				rightMotor.setSpeed(ROTATE_SPEED);
 
-				leftMotor.rotate(convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
-				rightMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
+				leftMotor.rotate(leftFactor * convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
+				rightMotor.rotate(rightFactor * convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
 
 				leftMotor.setSpeed(FORWARD_SPEED);
 				rightMotor.setSpeed(FORWARD_SPEED);
-				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), true);
-				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), false);
-				leftMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
+
+				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 15), true);
+				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 15), false);
+				
+				do {
+					if(poller.getDistance() > 20) {
+						leftMotor.setSpeed(FORWARD_SPEED-100);
+						rightMotor.setSpeed(FORWARD_SPEED+100);
+					} else {
+						leftMotor.setSpeed(FORWARD_SPEED);
+						rightMotor.setSpeed(FORWARD_SPEED);
+					}
+					leftMotor.forward();
+					rightMotor.forward();
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}while(Math.abs(curX - Odometer.getOdometer().getXYT()[0]) > 0.30); 
+				
+			
+				
+				/**				leftMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
 				rightMotor.rotate(convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
-				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), true);
-				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 30), false);
+				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 10), true);
+				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 10), false);
+				while(poller.getDistance() <15) {
+					leftMotor.forward();
+					rightMotor.forward();
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} **/
+				sensorMotor.rotate(-sensorRotation);
+				
 				isNavigating = false;
 				driveTo(leftMotor, rightMotor, x, y, poller);
+				sensorRotation = -45;
+				sensorMotor.rotate(sensorRotation);
 			}
 		}
 		isNavigating = false;
