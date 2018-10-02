@@ -8,7 +8,7 @@ import lejos.hardware.motor.EV3MediumRegulatedMotor;
 
 public class Navigation extends Thread {
 	private static final int FORWARD_SPEED = 250;
-	private static final int ROTATE_SPEED = 150;
+	private static final int ROTATE_SPEED = 300;
 	private static double DEGREE_TO_RADIAN_FACTOR = 180 / Math.PI;
 	private static boolean isNavigating;
 
@@ -103,8 +103,9 @@ public class Navigation extends Thread {
 		
 		while (leftMotor.isMoving() && rightMotor.isMoving()) {
 
-			if (poller.getDistance() < 15) {
+			if (poller.getDistance() < 20 && poller.getDistance()<distance* Lab3.TILE_SIZE) {
 				double curX = Odometer.getOdometer().getXYT()[0];
+				double curY = Odometer.getOdometer().getXYT()[1];
 				int leftFactor = 1;
 				int rightFactor = -1;
 				//reset sensor rotation
@@ -112,8 +113,7 @@ public class Navigation extends Thread {
 					leftFactor = -1;
 					rightFactor = 1;
 				}
-				sensorMotor.rotate(-sensorRotation);
-			sensorRotation = leftFactor* 90;
+				sensorRotation = leftFactor* 90;
 				sensorMotor.rotate(sensorRotation);
 				leftMotor.setSpeed(ROTATE_SPEED);
 				rightMotor.setSpeed(ROTATE_SPEED);
@@ -129,8 +129,8 @@ public class Navigation extends Thread {
 				
 				do {
 					if(poller.getDistance() > 20) {
-						leftMotor.setSpeed(FORWARD_SPEED-100);
-						rightMotor.setSpeed(FORWARD_SPEED+100);
+						leftMotor.setSpeed(FORWARD_SPEED-(leftFactor*100));
+						rightMotor.setSpeed(FORWARD_SPEED-(rightFactor*100));
 					} else {
 						leftMotor.setSpeed(FORWARD_SPEED);
 						rightMotor.setSpeed(FORWARD_SPEED);
@@ -143,7 +143,8 @@ public class Navigation extends Thread {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-				}while(Math.abs(curX - Odometer.getOdometer().getXYT()[0]) > 0.30); 
+				}while(Math.abs(curX - Odometer.getOdometer().getXYT()[0]) > 0.30 &&
+						Math.abs(curY - Odometer.getOdometer().getXYT()[0]) > 0.30); 
 				
 			
 				
@@ -165,8 +166,8 @@ public class Navigation extends Thread {
 				
 				isNavigating = false;
 				driveTo(leftMotor, rightMotor, x, y, poller);
-				sensorRotation = -45;
-				sensorMotor.rotate(sensorRotation);
+				sensorRotation = 0;
+				//sensorMotor.rotate(sensorRotation);
 			}
 		}
 		isNavigating = false;
