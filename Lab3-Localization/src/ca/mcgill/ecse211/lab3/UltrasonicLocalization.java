@@ -90,6 +90,8 @@ public class UltrasonicLocalization {
 			leftMotor.rotate(Lab4.convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, deltaTheta), true);
 			rightMotor.rotate(-Lab4.convertAngle(Lab4.WHEEL_RAD, Lab4.TRACK, deltaTheta), false);
 		}
+		
+		odo.setTheta(0);
 	}
 	
 	private void rotateToFallingEdge(boolean counterClockwise) {
