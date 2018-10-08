@@ -1,9 +1,9 @@
 package ca.mcgill.ecse211.lab3;
 
 import java.text.DecimalFormat;
+
 import ca.mcgill.ecse211.odometer.Odometer;
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
-import ca.mcgill.ecse211.odometer.OdometryCorrection;
 import lejos.hardware.lcd.TextLCD;
 
 /**
@@ -17,7 +17,6 @@ public class Display implements Runnable {
   private double[] position;
   private final long DISPLAY_PERIOD = 25;
   private long timeout = Long.MAX_VALUE;
-  private UltrasonicPoller poller;
   
   /**
    * This is the class constructor
@@ -26,12 +25,6 @@ public class Display implements Runnable {
    * @param UltrasonicPoller: poller to read the data from us sensor
    * @throws OdometerExceptions 
    */
-  public Display(TextLCD lcd, UltrasonicPoller poller) throws OdometerExceptions {
-    odo = Odometer.getOdometer();
-    this.poller = poller;
-    this.lcd = lcd;
-  }
-  
   public Display(TextLCD lcd) throws OdometerExceptions {
 	    odo = Odometer.getOdometer();
 	    this.lcd = lcd;
@@ -43,9 +36,8 @@ public class Display implements Runnable {
    * @param odoData
    * @throws OdometerExceptions 
    */
-  public Display(TextLCD lcd, UltrasonicPoller poller,long timeout) throws OdometerExceptions {
+  public Display(TextLCD lcd,long timeout) throws OdometerExceptions {
     odo = Odometer.getOdometer();
-    this.poller = poller;
     this.timeout = timeout;
     this.lcd = lcd;
   }
@@ -58,7 +50,6 @@ public class Display implements Runnable {
 
     long tStart = System.currentTimeMillis();
     do {
-        lcd.clear();
       updateStart = System.currentTimeMillis();
       // Retrieve x, y and Theta information
       position = odo.getXYT();
@@ -67,9 +58,8 @@ public class Display implements Runnable {
       lcd.drawString("X: " + numberFormat.format(position[0]), 0, 0);
       lcd.drawString("Y: " + numberFormat.format(position[1]), 0, 1);
       lcd.drawString("T: " + numberFormat.format(position[2]), 0, 2);
-      if(poller != null) {
-          lcd.drawString("Distance: " + poller.getDistance(), 0, 3);
-      }
+      lcd.drawString("D: " + numberFormat.format(UltrasonicLocalization.instance.getDistanceData()), 0, 3);
+
       // this ensures that the data is updated only once every period
       updateEnd = System.currentTimeMillis();
       if (updateEnd - updateStart < DISPLAY_PERIOD) {

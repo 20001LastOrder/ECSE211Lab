@@ -6,187 +6,235 @@ import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.motor.EV3MediumRegulatedMotor;
 
+/**
+ * Class to perform the navigation
+ * @author Percy Chen 260727955
+ * @author Anssam Ghezala 260720743
+ *
+ */
 public class Navigation extends Thread {
+	//CONSTANT VALUES
 	private static final int FORWARD_SPEED = 250;
 	private static final int ROTATE_SPEED = 300;
 	private static double DEGREE_TO_RADIAN_FACTOR = 180 / Math.PI;
+	private static final int MOTOR_ACC = 300;
+	private static final int ROTATE_RIGHT_ANGLE = 90;
+	private static final int OBSTACLE_AVOID_DIS = 15;
+	private static final int ROTATE_SPEED_ADD = 100;
+	private static final int DANGEROUS_DIS = 20;
+	private static final int THREAD_SLEEP_TIME = 10;
+	private static final double OBSTACLE_ALLOWED_ERR_X = 0.30;
+	private static final double OBSTACLE_ALLOWED_ERR_Y = 0.30;
+	private static final double SQUARE = 2;
+	private static final double MAX_ANGLE = 360;
+	// sense we only use the medium motor here, put it directly in this class
+	private static final EV3MediumRegulatedMotor sensorMotor = new EV3MediumRegulatedMotor(LocalEV3.get().getPort("C"));
+	
+	//check if the robot is current navigating
 	private static boolean isNavigating;
 
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor rightMotor;
 	private UltrasonicPoller poller;
-	private static final EV3MediumRegulatedMotor sensorMotor = new EV3MediumRegulatedMotor(LocalEV3.get().getPort("C"));
+	private int[][] destinations;
+
+	//rotation for the ultrasonic sensor
 	private int sensorRotation;
-	
-	public Navigation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, UltrasonicPoller poller) {
+
+	/**
+	 * Constructor for the navigations class
+	 * @param leftMotor: abstraction for the left motor of the robot
+	 * @param rightMotor: abstraction for the right motor of the robot
+	 * @param poller: ultrasonic poller to get the data from ultrasonic sensor, null if not use
+	 * @param destinations: destinations for the robot to reach
+	 */
+	public Navigation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, UltrasonicPoller poller,
+			int[][] destinations) {
 		this.leftMotor = leftMotor;
 		this.rightMotor = rightMotor;
 		this.poller = poller;
+		this.destinations = destinations;
 		sensorRotation = 0;
 	}
-
+	
+	/**
+	 *  main method for the navigation thread to run
+	 */
 	public void run() {
 		try {
-			if(poller == null) {
-				driveTo(leftMotor, rightMotor, 0, 2);
-				driveTo(leftMotor, rightMotor, 1, 1);
-				driveTo(leftMotor, rightMotor, 2, 2);
-				driveTo(leftMotor, rightMotor, 2, 1);
-				driveTo(leftMotor, rightMotor, 0, 0);
-			} else {
-			driveTo(leftMotor, rightMotor, 0, 2,poller);
-			driveTo(leftMotor, rightMotor, 1, 1,poller);
-			driveTo(leftMotor, rightMotor, 2, 2,poller);
-			driveTo(leftMotor, rightMotor, 2, 1,poller);
-			driveTo(leftMotor, rightMotor, 0, 0,poller);
+			// drive the robot to destinations one by one
+			Thread.sleep(1000);
+			for (int[] destinate : destinations) {
+				travelTo(destinate[0], destinate[1], poller);
 			}
 		} catch (OdometerExceptions e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void driveTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, int x, int y)
-			throws OdometerExceptions {
+	/**
+	 * Drive the robot to required destination
+	 * @param x: x value of the destination
+	 * @param y: y value of the destination
+	 * @param poller: poller: ultrasonic poller to get the data from ultrasonic sensor, null if not use
+	 * @throws OdometerExceptions: exception related to the Odometer
+	 */
+	public void travelTo(int x, int y, UltrasonicPoller poller)throws OdometerExceptions {
 		if (isNavigating) {
 			return;
 		}
 		isNavigating = true;
+		// set up the motor
 		for (EV3LargeRegulatedMotor motor : new EV3LargeRegulatedMotor[] { leftMotor, rightMotor }) {
 			motor.stop();
-			motor.setAcceleration(300);
+			motor.setAcceleration(MOTOR_ACC);
 		}
-
-		double[] currentPosition = Odometer.getOdometer().getXYT();
-		double deltaX = x - currentPosition[0];
-		double deltaY = y - currentPosition[1];
-
-		double distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
-
-		double rotation = Math.atan2(deltaX, deltaY);
-
-		rotateTo(leftMotor, rightMotor, rotation * DEGREE_TO_RADIAN_FACTOR, currentPosition[2]);
-
+		double[] currentPosition = Odometer.getOdometer().getXYT(); //get current position of the robot
+		
+		//motion[0] = rotation to the destination, motion[1] = distance to the destination
+		double[] motions = calculateMotion(x, y, currentPosition); 
+		
+		//rotate to current position
+		turnTo(motions[0] * DEGREE_TO_RADIAN_FACTOR, currentPosition[2]);
 		leftMotor.setSpeed(FORWARD_SPEED);
 		rightMotor.setSpeed(FORWARD_SPEED);
-		leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), true);
-		rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), false);
+		
+		//if no poller passed (no use of ultrasonic sensor), just wait for to the destination
+		if(poller == null) {
+			leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, motions[1] * Lab3.TILE_SIZE), true);
+
+			rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, motions[1] * Lab3.TILE_SIZE), false);
+		}else {
+			
+			leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, motions[1] * Lab3.TILE_SIZE), true);
+			rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, motions[1] * Lab3.TILE_SIZE), true);
+			//immediate return to detect the obstacles
+			avoidObstacle(x, y);
+		}
+		
+		
 		isNavigating = false;
 	}
 
-	public void driveTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, int x, int y,
-			UltrasonicPoller poller) throws OdometerExceptions {
-		
-		
-		if (isNavigating) {
-			return;
-		}
-		isNavigating = true;
-		for (EV3LargeRegulatedMotor motor : new EV3LargeRegulatedMotor[] { leftMotor, rightMotor }) {
-			motor.stop();
-			motor.setAcceleration(300);
-		}
-		
-		double[] currentPosition = Odometer.getOdometer().getXYT();
-		double deltaX = x - currentPosition[0];
-		double deltaY = y - currentPosition[1];
-		double distance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
-
-		double rotation = Math.atan2(deltaX, deltaY);
-		
-		rotateTo(leftMotor, rightMotor,rotation * DEGREE_TO_RADIAN_FACTOR, currentPosition[2]);
-		
-		leftMotor.setSpeed(FORWARD_SPEED);
-		rightMotor.setSpeed(FORWARD_SPEED);
-		leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), true);
-		rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, distance * Lab3.TILE_SIZE), true);
-		
+	/**
+	 * Continuing check the data from the ultrasonic sensor to avoid the obstacles
+	 * @param x: x value of destination to reach
+	 * @param y: y value of the destination to reach
+	 * @throws OdometerExceptions: exception related to the Odometer
+	 */
+	private void avoidObstacle(int x, int y) throws OdometerExceptions {
 		while (leftMotor.isMoving() && rightMotor.isMoving()) {
-
-			if (poller.getDistance() < 20 && poller.getDistance()<distance* Lab3.TILE_SIZE) {
-				double curX = Odometer.getOdometer().getXYT()[0];
-				double curY = Odometer.getOdometer().getXYT()[1];
-				int leftFactor = 1;
-				int rightFactor = -1;
-				//reset sensor rotation
-				if(sensorRotation == -45) {
-					leftFactor = -1;
-					rightFactor = 1;
-				}
-				sensorRotation = leftFactor* 90;
+			double[] position = Odometer.getOdometer().getXYT();
+			double curX = position[0];
+			double curY = position[1];
+			double distance = this.calculateMotion(x, y, position)[1];
+			//when the sensor detects the obstacle that is on the way to the destination, do corrections
+			if (poller.getDistance() < DANGEROUS_DIS && poller.getDistance() < distance * Lab3.TILE_SIZE) {
+				
+				sensorRotation = 90;
+				//rotate sensor to facing the obstacle
 				sensorMotor.rotate(sensorRotation);
 				leftMotor.setSpeed(ROTATE_SPEED);
 				rightMotor.setSpeed(ROTATE_SPEED);
+				
+				// rotate to the right
+				leftMotor.rotate(convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, ROTATE_RIGHT_ANGLE), true);
+				rightMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, ROTATE_RIGHT_ANGLE), false);
 
-				leftMotor.rotate(leftFactor * convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
-				rightMotor.rotate(rightFactor * convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
-
+				//forward some distance to not touch the obstacle
 				leftMotor.setSpeed(FORWARD_SPEED);
 				rightMotor.setSpeed(FORWARD_SPEED);
-
-				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 15), true);
-				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 15), false);
-				
+//				double[] lastDis = Odometer.getOdometer().getXYT();
+//				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, OBSTACLE_AVOID_DIS), true);
+//				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, OBSTACLE_AVOID_DIS), false);
+//				double[] curDis = Odometer.getOdometer().getXYT();
+//				boolean isAvoiding = true;
+//				boolean checkX = true;
+//				double deltaX = Math.abs(curDis[0] - lastDis[0]);
+//				double deltaY = Math.abs(curDis[1] - lastDis[1]);
+//				if(deltaX < deltaY) {
+//					checkX = false;
+//				}
+				//go around the obstacle to avoid it, and wait for the robot to cycle the obstacle
+				//until it reaches the back of the obstacle
+				//use do-while to make sure it at least move it's position
+				int time = 0;
 				do {
-					if(poller.getDistance() > 20) {
-						leftMotor.setSpeed(FORWARD_SPEED-(leftFactor*100));
-						rightMotor.setSpeed(FORWARD_SPEED-(rightFactor*100));
+					if (poller.getDistance() > DANGEROUS_DIS) {
+						leftMotor.setSpeed(FORWARD_SPEED - ROTATE_SPEED_ADD);
+						rightMotor.setSpeed(FORWARD_SPEED + ROTATE_SPEED_ADD);
 					} else {
 						leftMotor.setSpeed(FORWARD_SPEED);
 						rightMotor.setSpeed(FORWARD_SPEED);
 					}
 					leftMotor.forward();
 					rightMotor.forward();
+					time += THREAD_SLEEP_TIME;
 					try {
-						Thread.sleep(10);
+						Thread.sleep(THREAD_SLEEP_TIME);
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-				}while(Math.abs(curX - Odometer.getOdometer().getXYT()[0]) > 0.30 &&
-						Math.abs(curY - Odometer.getOdometer().getXYT()[0]) > 0.30); 
+				} while (time < 5000);
 				
-			
-				
-				/**				leftMotor.rotate(-convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), true);
-				rightMotor.rotate(convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, 90), false);
-				leftMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 10), true);
-				rightMotor.rotate(convertDistance(Lab3.WHEEL_RAD, 10), false);
-				while(poller.getDistance() <15) {
-					leftMotor.forward();
-					rightMotor.forward();
-					try {
-						Thread.sleep(50);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				} **/
+				//rotate back the sensor to the original position
 				sensorMotor.rotate(-sensorRotation);
-				
-				isNavigating = false;
-				driveTo(leftMotor, rightMotor, x, y, poller);
 				sensorRotation = 0;
-				//sensorMotor.rotate(sensorRotation);
+
+				//finish this navigation, restart a new navigation to the destination
+				isNavigating = false;
+				travelTo(x, y, poller);
 			}
 		}
-		isNavigating = false;
 	}
-
-	public static boolean isNavigating() {
+	
+	/**
+	 * check if the motor is navigating
+	 * @return: true if isNavigation, otherwise false
+	 */
+	public boolean isNavigating() {
 		return isNavigating;
 	}
+	
+	/**
+	 * calculate the data needed to perform navigation
+	 * @param x: x value of the destination
+	 * @param y: y value of the destination
+	 * @param currentPosition: current position of the motor
+	 * @return: double[] with 0th to be the rotation and 1st to be the distance
+	 * @throws OdometerExceptions: OdometerExceptions: exception related to the Odometer
+	 */
+	private double[] calculateMotion(int x, int y, double[] currentPosition) throws OdometerExceptions {
+		double deltaX = x - currentPosition[0];
+		double deltaY = y - currentPosition[1];
 
-	public void rotateTo(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, double rotation,
-			double theta) {
+		//find the distance to the point
+		double distance = Math.sqrt(Math.pow(deltaX, SQUARE) + Math.pow(deltaY, SQUARE));
+		double rotation = Math.atan2(deltaX, deltaY);
+
+		double[] motion =  {rotation, distance};
+		return motion;
+	}
+
+	/**
+	 * rotate to the destination
+	 * @param rotation: rotation to the destination
+	 * @param theta: current rotation of the robot
+	 */
+	public void turnTo(double rotation, double theta) {
 		double angle = rotation - theta;
+		//speed factor for change sign
+		//default rotate to the right
 		int leftSpeedFactor = 1;
 		int rightSpeedFactor = -1;
 		if (angle < 0) {
-			angle = angle + 360;
+			angle = angle + MAX_ANGLE;
 		}
-		if (angle > 180) {
-			angle = 360 - angle;
+		//if the angle is larger then 180, rotate to the left instead
+		if (angle > MAX_ANGLE/2) {
+			angle = MAX_ANGLE - angle;
 			leftSpeedFactor = -1;
 			rightSpeedFactor = 1;
 		}
@@ -197,11 +245,24 @@ public class Navigation extends Thread {
 		rightMotor.rotate(rightSpeedFactor * convertAngle(Lab3.WHEEL_RAD, Lab3.TRACK, angle), false);
 	}
 
+	/**
+	 * convert the angle and distance to the distance covered by motor
+	 * @param radius: radius of the motor
+	 * @param distance: distance of the motor to go
+	 * @return: distance covered by the motor
+	 */
 	private static int convertDistance(double radius, double distance) {
-		return (int) ((180.0 * distance) / (Math.PI * radius));
+		return (int) (((MAX_ANGLE/2)* distance) / (Math.PI * radius));
 	}
 
+	/**
+	 * convert the angle of the robot to turn to the distance covered by motor
+	 * @param radius: radius of the motor
+	 * @param width: width of the robot
+	 * @param angle angle to turn by the robot
+	 * @return distance covered by the motor
+	 */
 	private static int convertAngle(double radius, double width, double angle) {
-		return convertDistance(radius, Math.PI * width * angle / 360.0);
+		return convertDistance(radius, Math.PI * width * angle / MAX_ANGLE);
 	}
 }

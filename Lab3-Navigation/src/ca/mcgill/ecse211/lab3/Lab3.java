@@ -1,28 +1,35 @@
 package ca.mcgill.ecse211.lab3;
 
 import ca.mcgill.ecse211.odometer.Odometer;
+
 import ca.mcgill.ecse211.odometer.OdometerExceptions;
 import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
-import lejos.hardware.motor.EV3MediumRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
 
+/**
+ * Main class for the navigation and obstacle avoiding lab
+ * @author Percy Chen 260727855
+ * @author 
+ *
+ */
 public class Lab3 {
 	// Motor Objects, and Robot related parameters
 	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
 	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
 	private static final Port usPort = LocalEV3.get().getPort("S1");
 	private static final TextLCD lcd = LocalEV3.get().getTextLCD();
+	private static final int[][] destinations = { { 1, 0 }, { 2, 1 }, { 2, 2 }, { 0, 2 }, { 1, 1 } };
 	int buttonChoice;
 
 	public static final double TILE_SIZE = 30.48;
 	public static final double WHEEL_RAD = 2.15;
-	public static final double TRACK = 13.67; 
+	public static final double TRACK = 13.67;
 
 	public static void main(String args[]) {
 		// Odometer related objects
@@ -54,7 +61,7 @@ public class Lab3 {
 				odoDisplayThread.start();
 
 				// spawn a new Thread to avoid SquareDriver.drive() from blocking
-				Navigation nav = new Navigation(leftMotor, rightMotor, null);
+				Navigation nav = new Navigation(leftMotor, rightMotor, null, destinations);
 				Thread navThread = new Thread(nav);
 				navThread.start();
 			} else {
@@ -76,7 +83,7 @@ public class Lab3 {
 				pollerThread.start();
 
 				// spawn a new Thread to avoid SquareDriver.drive() from blocking
-				Navigation nav = new Navigation(leftMotor, rightMotor, poller);
+				Navigation nav = new Navigation(leftMotor, rightMotor, poller, destinations);
 				Thread navThread = new Thread(nav);
 				navThread.start();
 			}
