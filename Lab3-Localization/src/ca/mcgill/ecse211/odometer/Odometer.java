@@ -10,7 +10,7 @@
 
 package ca.mcgill.ecse211.odometer;
 
-import ca.mcgill.ecse211.lab3.Lab4;
+import ca.mcgill.ecse211.lab4.Lab4;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
 /**

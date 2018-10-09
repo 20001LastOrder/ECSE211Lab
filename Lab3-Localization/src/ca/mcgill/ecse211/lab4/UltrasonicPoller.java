@@ -1,4 +1,4 @@
-package ca.mcgill.ecse211.lab3;
+package ca.mcgill.ecse211.lab4;
 
 import lejos.robotics.SampleProvider;
 
