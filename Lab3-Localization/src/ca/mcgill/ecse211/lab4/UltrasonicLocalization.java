@@ -7,11 +7,17 @@ import lejos.hardware.lcd.LCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.robotics.SampleProvider;
 
+/**
+ * Class to perform the navigation
+ * @author Percy Chen 260727955
+ * @author Anssam Ghezala 260720743
+ *
+ */
 public class UltrasonicLocalization {
 	public enum UltrasonicLocalizationMode{FALLING_EDGE, RISING_EDGE}
 	public static int WALL_DIS = 50;
 	public static int WIDTH = 3;
-	private static final int FILTER_OUT = 40;               //filter out amount of distance that to far
+	private static final int FILTER_OUT = 20;               //filter out amount of distance that to far
 	private int filterControl;                             //control variable for recording how long the 
 
 	
@@ -22,6 +28,13 @@ public class UltrasonicLocalization {
 	private Odometer odo;
 	private Navigation nav;
 	
+	
+	/** Construction for localization class
+	 * @param mode: Rising of Falling edge mode
+	 * @param sample: US sample provider 
+	 * @param nav: navigation class
+	 * @throws OdometerExceptions
+	 */
 	public UltrasonicLocalization(UltrasonicLocalizationMode mode, SampleProvider sample,
 							Navigation nav) throws OdometerExceptions {
 		this.mode = mode;
@@ -46,16 +59,16 @@ public class UltrasonicLocalization {
 			
 			double angleB = odo.getXYT()[2];  ///get the angle b
 			
-			double averageAngle = (angleA+angleB)/2;
-			double deltaTheta;
+			double averageAngle = (angleA+angleB)/2; //get average of angles
+			double deltaTheta; //wanted angle
 			
-			if(angleA<angleB) {
-				deltaTheta = angleB + (135 - averageAngle);
+			if(angleA<angleB) { // set values of deltaTheta depending on whether a < b
+				deltaTheta = angleB + (135 - averageAngle); //135 value got from doing multiple trials
 			} else {
-				deltaTheta = angleB + (315 - averageAngle);
+				deltaTheta = angleB + (315 - averageAngle); //315 value got from doing multiple trials
 		    }
 			
-			nav.rotate(deltaTheta);
+			nav.rotate(deltaTheta); //rotate to wanted angle
 		}else {
 			rotateToFallingEdge(false);
 			
@@ -68,20 +81,23 @@ public class UltrasonicLocalization {
 			double averageAngle = (angleA+angleB)/2;
 			double deltaTheta;
 			
-			if(angleA<angleB) {
-				deltaTheta = angleB + (135 - averageAngle);
+			if(angleA<angleB) {// set values of deltaTheta depending on whether a < b
+				deltaTheta = angleB + (135 - averageAngle); //135 value got from doing multiple trials
 			} else {
-				deltaTheta = angleB + (180 - averageAngle);
+				deltaTheta = angleB + (180 - averageAngle); //180 value got from doing multiple trials
 		    }
 			
-			nav.rotate(deltaTheta);
+			nav.rotate(deltaTheta);//rotate to wanted angle
 		}
 		
-		odo.setTheta(0);
+		odo.setTheta(0); //set angle theta of odometer back to 0 (once it's at the wanted angle)
 	}
 	
+	/** Implements Falling Edge rotation
+	 * @param counterClockwise: which way to rotate (clockwise if false, counter clockwise if true) 
+	 */
 	private void rotateToFallingEdge(boolean counterClockwise) {
-		//the robot will facing the wall at the beginning, so rotate util
+		//the robot will facing the wall at the beginning, so rotate until
 		//its not facing a wall
 		while(getDistanceData() < WALL_DIS + WIDTH) {
 			nav.rotate(counterClockwise);
@@ -96,6 +112,7 @@ public class UltrasonicLocalization {
 	private void rotateToRisingEdge(boolean counterClockwise) {
 		//the robot will not facing the wall at the beginning
 		lastDistance = 100;
+		//rotate until facing the wall
 		while(getDistanceData() > WALL_DIS+WIDTH) {
 			nav.rotate(counterClockwise);
 		}
@@ -107,6 +124,10 @@ public class UltrasonicLocalization {
 		}
 	}
 	
+	
+	/** filters sampled distances for better reading
+	 * @return distanceToReturn: distance read from sensor
+	 */
 	public float getDistanceData() {
 		ultrasonicSample.fetchSample(distanceData, 0);
 		float distance = distanceData[0]*100;
