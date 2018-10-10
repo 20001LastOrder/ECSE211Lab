@@ -13,9 +13,10 @@ import lejos.hardware.sensor.SensorModes;
 import lejos.robotics.SampleProvider;
 
 /**
- * Main class for the navigation and obstacle avoiding lab
- * @author Percy Chen 260727855
- * @author 
+ * Main class for performing localization
+ * 
+ * @author Percy Chen 260727955
+ * @author Anssam Ghezala 260720743
  *
  */
 public class Lab4 {
@@ -24,10 +25,10 @@ public class Lab4 {
 	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
 	private static final Port usPort = LocalEV3.get().getPort("S1");
 	private static final TextLCD lcd = LocalEV3.get().getTextLCD();
-	 //get color sample
-	  private static final Port portColor = LocalEV3.get().getPort("S2");
-	  private static final EV3ColorSensor colorSensor = new EV3ColorSensor(portColor);
-	  private static final SampleProvider colorSample = colorSensor.getRGBMode();
+	// get color sample
+	private static final Port portColor = LocalEV3.get().getPort("S2");
+	private static final EV3ColorSensor colorSensor = new EV3ColorSensor(portColor);
+	private static final SampleProvider colorSample = colorSensor.getRGBMode();
 	int buttonChoice;
 
 	public static final int FORWARD_SPEED = 100;
@@ -43,7 +44,7 @@ public class Lab4 {
 			@SuppressWarnings("resource") // Because we don't bother to close this resource
 			SensorModes usSensor = new EV3UltrasonicSensor(usPort); // usSensor is the instance
 			SampleProvider usDistance = usSensor.getMode("Distance"); // usDistance provides samples from
-			Display odometryDisplay = new Display(lcd);        
+			Display odometryDisplay = new Display(lcd);
 			Thread odoThread = new Thread(odometer);
 			Navigation nav = new Navigation(leftMotor, rightMotor);
 			odoThread.start();
@@ -51,7 +52,7 @@ public class Lab4 {
 				// clear the display
 				lcd.clear();
 
-				// ask the user whether the motors should drive in a square or float
+				// ask the user to choose correction mode
 				lcd.drawString("< Left | Right >", 0, 0);
 				lcd.drawString("       |        ", 0, 1);
 				lcd.drawString(" Rising| Falling", 0, 2);
@@ -59,27 +60,28 @@ public class Lab4 {
 				lcd.drawString("       |        ", 0, 4);
 
 				buttonChoice = Button.waitForAnyPress(); // Record choice (left or right press)
-			} while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT 
-					&& buttonChoice!=Button.ID_ESCAPE);
+			} while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT
+					&& buttonChoice != Button.ID_ESCAPE);
 
 			if (buttonChoice == Button.ID_LEFT) {
 				Thread lcdThread = new Thread(odometryDisplay);
 				lcdThread.start();
+
 				UltrasonicLocalization usLocal = new UltrasonicLocalization(
-													UltrasonicLocalization.UltrasonicLocalizationMode.RISING_EDGE,
-												  usDistance, nav);;
+						UltrasonicLocalization.UltrasonicLocalizationMode.RISING_EDGE, usDistance, nav);
 				usLocal.performLocalization();
-			}else if(buttonChoice == Button.ID_RIGHT) {
+			} else if (buttonChoice == Button.ID_RIGHT) {
 				Thread lcdThread = new Thread(odometryDisplay);
 				lcdThread.start();
-				UltrasonicLocalization usLocal = new UltrasonicLocalization(
-						UltrasonicLocalization.UltrasonicLocalizationMode.FALLING_EDGE,
-					  usDistance, nav);
 
+				UltrasonicLocalization usLocal = new UltrasonicLocalization(
+						UltrasonicLocalization.UltrasonicLocalizationMode.FALLING_EDGE, usDistance, nav);
 				usLocal.performLocalization();
-			}else {
+			} else {
 				System.exit(0);
 			}
+
+			// Wait for color localization
 			do {
 				// clear the display
 				lcd.clear();
@@ -88,39 +90,18 @@ public class Lab4 {
 				lcd.drawString("Click for Color Localization", 0, 0);
 				buttonChoice = Button.waitForAnyPress(); // Record choice (left or right press)
 			} while (buttonChoice != Button.ID_ENTER && buttonChoice != Button.ID_ESCAPE);
-			
-			if(buttonChoice == Button.ID_ENTER) {
+
+			if (buttonChoice == Button.ID_ENTER) {
 				LightLocalization lLocal = new LightLocalization(colorSample, nav);
 				lLocal.performLocalization();
 			}
-			
-			
-			while (Button.waitForAnyPress() != Button.ID_ESCAPE);
+
+			while (Button.waitForAnyPress() != Button.ID_ESCAPE)
+				;
 			System.exit(0);
 		} catch (OdometerExceptions e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-	
-	/**
-	 * convert the angle and distance to the distance covered by motor
-	 * @param radius: radius of the motor
-	 * @param distance: distance of the motor to go
-	 * @return: distance covered by the motor
-	 */
-	public static int convertDistance(double radius, double distance) {
-		return (int) (((360/2)* distance) / (Math.PI * radius));
-	}
-
-	/**
-	 * convert the angle of the robot to turn to the distance covered by motor
-	 * @param radius: radius of the motor
-	 * @param width: width of the robot
-	 * @param angle angle to turn by the robot
-	 * @return distance covered by the motor
-	 */
-	public static int convertAngle(double radius, double width, double angle) {
-		return convertDistance(radius, Math.PI * width * angle / 360);
 	}
 }

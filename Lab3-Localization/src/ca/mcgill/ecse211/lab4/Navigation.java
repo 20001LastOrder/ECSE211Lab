@@ -152,21 +152,35 @@ public class Navigation{
 		}	
 	}
 
+	/**
+	 * Set the speed of two motors
+	 * @param speed
+	 */
 	public void setSpeed(int speed) {
 		leftMotor.setSpeed(speed);
 		rightMotor.setSpeed(speed);
 	}
 	
+	/**
+	 * set acceleration of two motors
+	 * @param acc
+	 */
 	public void setAcc(int acc) {
 		leftMotor.setAcceleration(acc);
 		rightMotor.setAcceleration(acc);
 	}
 	
+	/**
+	 * move robot forward
+	 */
 	public void forward() {
 		leftMotor.forward();
 		rightMotor.forward();
 	}
 	
+	/**
+	 * Stop the motor
+	 */
 	public void stop() {
 		leftMotor.stop(true);
 		rightMotor.stop(false);

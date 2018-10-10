@@ -15,11 +15,17 @@ import lejos.robotics.SampleProvider;
  */
 public class UltrasonicLocalization {
 	public enum UltrasonicLocalizationMode{FALLING_EDGE, RISING_EDGE}
-	public static int WALL_DIS = 50;
-	public static int WIDTH = 3;
+	public static final int WALL_DIS = 50;                 //Furtherest distance to see a wall
+	public static final int WIDTH = 3;                     //acceptable range
 	private static final int FILTER_OUT = 20;               //filter out amount of distance that to far
-	private int filterControl;                             //control variable for recording how long the 
-
+	private static final int RISING_EDGE_SMALL_ANGLE = 135; //angle for performing localization when a  < b
+															//135 value got from doing multiple trials
+	private static final int RISING_EDGE_LARGE_ANGLE = 315; //angle for performing localization when a  > b
+															//315 value got from doing multiple trials	
+	private static final int FALLING_EDGE_SMALL_ANGLE = 135; //angle for performing localization when a  < b
+															//135 value got from doing multiple trials
+	private static final int FALLING_EDGE_LARGE_ANGLE = 180; //angle for performing localization when a  > b
+	private static final int OUT_WALL_DISTANCE = 100;														//180 value got from doing multiple trials
 	
 	private UltrasonicLocalizationMode mode;
 	private SampleProvider ultrasonicSample;
@@ -27,7 +33,7 @@ public class UltrasonicLocalization {
 	private float lastDistance;
 	private Odometer odo;
 	private Navigation nav;
-	
+	private int filterControl;                             //control variable for recording how long the 
 	
 	/** Construction for localization class
 	 * @param mode: Rising of Falling edge mode
@@ -63,9 +69,9 @@ public class UltrasonicLocalization {
 			double deltaTheta; //wanted angle
 			
 			if(angleA<angleB) { // set values of deltaTheta depending on whether a < b
-				deltaTheta = angleB + (135 - averageAngle); //135 value got from doing multiple trials
+				deltaTheta = angleB + (RISING_EDGE_SMALL_ANGLE - averageAngle); 
 			} else {
-				deltaTheta = angleB + (315 - averageAngle); //315 value got from doing multiple trials
+				deltaTheta = angleB + (RISING_EDGE_LARGE_ANGLE - averageAngle); //315 value got from doing multiple trials
 		    }
 			
 			nav.rotate(deltaTheta); //rotate to wanted angle
@@ -82,9 +88,9 @@ public class UltrasonicLocalization {
 			double deltaTheta;
 			
 			if(angleA<angleB) {// set values of deltaTheta depending on whether a < b
-				deltaTheta = angleB + (135 - averageAngle); //135 value got from doing multiple trials
+				deltaTheta = angleB + (FALLING_EDGE_SMALL_ANGLE - averageAngle); //135 value got from doing multiple trials
 			} else {
-				deltaTheta = angleB + (180 - averageAngle); //180 value got from doing multiple trials
+				deltaTheta = angleB + (FALLING_EDGE_LARGE_ANGLE - averageAngle); //180 value got from doing multiple trials
 		    }
 			
 			nav.rotate(deltaTheta);//rotate to wanted angle
@@ -111,7 +117,7 @@ public class UltrasonicLocalization {
 	
 	private void rotateToRisingEdge(boolean counterClockwise) {
 		//the robot will not facing the wall at the beginning
-		lastDistance = 100;
+		lastDistance = OUT_WALL_DISTANCE;
 		//rotate until facing the wall
 		while(getDistanceData() > WALL_DIS+WIDTH) {
 			nav.rotate(counterClockwise);
@@ -130,7 +136,7 @@ public class UltrasonicLocalization {
 	 */
 	public float getDistanceData() {
 		ultrasonicSample.fetchSample(distanceData, 0);
-		float distance = distanceData[0]*100;
+		float distance = distanceData[0]*100;    //change the unit from m to cm
 		float distanceToReturn;
 		if (distance >= WALL_DIS + WIDTH && filterControl < FILTER_OUT) {
 			// bad value, do not set the distance var, however do increment the
