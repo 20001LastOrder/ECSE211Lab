@@ -143,7 +143,7 @@ public class UltrasonicLocalization {
 			distanceToReturn = distance;
 			lastDistance = distance;
 		}else {
-			// distance went below 255: reset filter and leave
+			// distance too low: reset filter and leave
 			// distance alone.
 			filterControl = 0;
 			distanceToReturn = distance;
